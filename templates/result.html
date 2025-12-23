@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Analysis Result</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            --card-gradient: linear-gradient(145deg, #0a0e27 0%, #0a1135 100%);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            
+            /* Solid Colors */
+            --danger: #ef4444; 
+            --success: #10b981;
+            
+            --danger-glow: rgba(239, 68, 68, 0.4);
+            --success-glow: rgba(16, 185, 129, 0.4);
+            --accent: #60a5fa;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- 1. ANIMATIONS --- */
+        @keyframes stampDrop {
+            0% { transform: scale(3); opacity: 0; }
+            50% { transform: scale(0.9); opacity: 1; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+
+        @keyframes floatParticle {
+            0% { transform: translateY(10vh) translateX(0) scale(0.5); opacity: 0; }
+            10% { opacity: 0.2; }
+            90% { opacity: 0.7; }
+            100% { transform: translateY(-120vh) translateX(20px) scale(1.1); opacity: 0; }
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            perspective: 1000px;
+            font-size: 1.1rem;
+        }
+
+        /* Particle Container */
+        .particle-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .particle {
+            position: absolute; bottom: -10px; border-radius: 50%;
+            animation: floatParticle 8s infinite linear;
+        }
+        
+        /* 3D Container */
+        .container {
+            background: var(--card-gradient);
+            padding: 3rem;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 1200px; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+            border: 1px solid var(--border-color);
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+            position: relative;
+            z-index: 10;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .content-grid {
+            display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: start;
+            transform: translateZ(20px);
+        }
+
+        .left-panel { 
+            text-align: left; opacity: 0;
+            animation: slideInLeft 0.8s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .right-panel {
+            background: rgba(0, 0, 0, 0.2); border-radius: 20px; padding: 25px;
+            border: 1px solid var(--border-color); opacity: 0;
+            animation: slideInRight 0.8s 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid { grid-template-columns: 1fr; }
+            .right-panel { margin-top: 30px; }
+            .container { transform: none !important; }
+        }
+
+        /* --- VERDICT STYLES --- */
+        .verdict-container {
+            display: flex;
+            flex-direction: column; 
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .verdict-title {
+            margin: 0; 
+            font-size: 2.2rem; 
+            font-weight: 800; 
+            letter-spacing: -0.02em; 
+            line-height: 1.1; 
+            animation: stampDrop 0.6s 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+        }
+
+        .badge {
+            display: inline-block; 
+            padding: 8px 20px; 
+            border-radius: 30px; 
+            font-weight: 700; 
+            font-size: 0.85rem; 
+            margin: 0; 
+            letter-spacing: 1px; 
+            text-transform: uppercase;
+        }
+
+        .spam { background: rgba(239, 68, 68, 0.1); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.5); box-shadow: 0 0 20px var(--danger-glow); }
+        .ham { background: rgba(16, 185, 129, 0.1); color: #86efac; border: 1px solid rgba(16, 185, 129, 0.5); box-shadow: 0 0 20px var(--success-glow); }
+
+        p.desc { color: var(--text-muted); font-size: 1rem; margin-bottom: 25px; line-height: 1.5; }
+
+        .preview-box {
+            background: #111827; border-radius: 16px; padding: 20px; margin-bottom: 25px;
+            border: 1px solid #1e293b; transition: transform 0.2s;
+        }
+        .preview-box:hover { transform: translateY(-3px) translateZ(10px); border-color: var(--accent); }
+
+        .preview-row { margin-bottom: 15px; } .preview-row:last-child { margin-bottom: 0; }
+        .preview-label { font-size: 0.7rem; color: #60a5fa; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 6px; letter-spacing: 1px; }
+        .preview-content { font-family: 'JetBrains Mono', monospace; color: #e2e8f0; font-size: 0.85rem; line-height: 1.6; word-break: break-all; background: rgba(255, 255, 255, 0.03); padding: 10px; border-radius: 8px; border-left: 3px solid #3b82f6; }
+
+        .feedback-section { border-top: 1px solid var(--border-color); padding-top: 20px; }
+        .btn-group { display: flex; gap: 10px; justify-content: start; margin-top: 15px; }
+        
+        .btn {
+            padding: 12px 20px; border-radius: 12px; background: transparent; cursor: pointer;
+            font-size: 0.9rem; font-weight: 600; font-family: 'Inter', sans-serif; border: 1px solid transparent; width: 100%;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn:hover { transform: translateY(-3px) scale(1.02); }
+        .btn-spam { border-color: #7f1d1d; background: rgba(69, 10, 10, 0.5); color: #fca5a5; }
+        .btn-spam:hover { background: #ef4444; color: white; box-shadow: 0 0 20px var(--danger-glow); }
+        .btn-ham { border-color: #064e3b; background: rgba(6, 78, 59, 0.5); color: #86efac; }
+        .btn-ham:hover { background: #10b981; color: white; box-shadow: 0 0 20px var(--success-glow); }
+
+        .metrics-title {
+            font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;
+            letter-spacing: 1.5px; margin-bottom: 20px; font-weight: 700; text-align: center;
+        }
+        .metric-table { width: 100%; border-collapse: separate; border-spacing: 0 15px; margin-bottom: 0; }
+        .metric-table td { vertical-align: top; font-size: 0.9rem; }
+        .metric-name { text-align: left; color: #94a3b8; font-weight: 500; }
+        .metric-val { text-align: right; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-weight: 700; padding-right: 15px; }
+        
+        .progress-bg { background: #1e293b; height: 8px; border-radius: 4px; width: 100%; overflow: hidden; }
+        .progress-fill { 
+            height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 4px; 
+            width: 0%; transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        
+        .confidence-section {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 25px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            text-align: center;
+        }
+
+        .confidence-val {
+            font-size: 3rem; 
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+            margin: 15px 0 5px 0;
+            letter-spacing: -2px;
+            opacity: 0;
+            animation: stampDrop 0.8s 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .confidence-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .single-bar-bg {
+            background: rgba(255,255,255,0.05);
+            height: 8px;
+            border-radius: 10px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .single-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        a.back-link {
+            color: #64748b; text-decoration: none; font-size: 0.95rem; font-weight: 600; display: block;
+            width: fit-content; margin: 30px auto 0 auto; padding: 10px 20px; border-radius: 30px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        a.back-link:hover { color: #f8fafc; background: rgba(255, 255, 255, 0.05); transform: translateX(-8px); }
+        a.back-link:active { transform: translateX(-8px) scale(0.95); background: rgba(255, 255, 255, 0.1); }
+
+        /* --- NEW: CUSTOM REFRESH & MODAL STYLES --- */
+        .refresh-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transform: rotate(180deg);
+            box-shadow: 0 0 15px rgba(96, 165, 250, 0.3);
+            border-color: var(--accent);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .custom-modal {
+            background: var(--card-gradient);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .custom-modal { transform: scale(1); }
+
+        .modal-icon { font-size: 2rem; margin-bottom: 15px; color: var(--accent); }
+        .modal-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; color: #fff; }
+        .modal-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; line-height: 1.5; }
+
+        .modal-actions { display: flex; gap: 15px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        
+        .btn-cancel { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
+        .btn-cancel:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        
+        .btn-confirm { background: var(--accent); color: #0f172a; }
+        .btn-confirm:hover { background: #93c5fd; box-shadow: 0 0 15px rgba(96, 165, 250, 0.4); }
+    </style>
+</head>
+<body>
+    
+    <div class="refresh-btn" onclick="openModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+    </div>
+
+    <div class="modal-overlay" id="resubmitModal">
+        <div class="custom-modal">
+            <div class="modal-icon">↺</div>
+            <div class="modal-title">{{ 'Resubmit Analysis?' if lang == 'en' else '重新分析？' }}</div>
+            <div class="modal-desc">
+                {{ 'This will re-process the current data. Previous results will be overwritten.' if lang == 'en' else '這將重新處理當前數據。之前的結果將被覆蓋。' }}
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeModal()">
+                    {{ 'Cancel' if lang == 'en' else '取消' }}
+                </button>
+                <button class="modal-btn btn-confirm" onclick="confirmResubmit()">
+                    {{ 'Continue' if lang == 'en' else '繼續' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <form id="refreshForm" action="{{ url_for('predict') }}" method="POST" style="display:none;">
+        <input type="hidden" name="domain" value="{{ domain }}">
+        <input type="hidden" name="message" value="{{ message }}">
+        <input type="hidden" name="language" value="{{ lang }}">
+    </form>
+
+    <div class="particle-bg" id="particle-container"></div>
+
+    <div class="container" id="tilt-card">
+        <div class="content-grid">
+            <div class="left-panel">
+                {% if prediction == 1 %}
+                    <div class="verdict-container">
+                        <div class="badge spam">{{ 'Spam Detected' if lang == 'en' else '偵測到垃圾郵件' }}</div>
+                        <h1 class="verdict-title" style="background: linear-gradient(to right, #fca5a5, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            {{ 'Spam' if lang == 'en' else '垃圾郵件' }}
+                        </h1>
+                    </div>
+                    <p class="desc">{{ 'found risky content or untrusted domain.' if lang == 'en' else '發現風險內容或不受信任的域名。' }}</p>
+                {% else %}
+                    <div class="verdict-container">
+                        <div class="badge ham">{{ 'Secure' if lang == 'en' else '安全' }}</div>
+                        <h1 class="verdict-title" style="background: linear-gradient(to right, #86efac, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            {{ 'Safe Content' if lang == 'en' else '內容安全' }}
+                        </h1>
+                    </div>
+                    <p class="desc">{{ 'No malicious indicators found.' if lang == 'en' else '未發現惡意指標。' }}</p>
+                {% endif %}
+
+                <div class="preview-box">
+                    <div class="preview-row">
+                        <span class="preview-label">{{ 'Sender Domain' if lang == 'en' else '寄件網域' }}</span>
+                        <div class="preview-content">{{ domain }}</div>
+                    </div>
+                    <div class="preview-row">
+                        <span class="preview-label">{{ 'Message Analysis' if lang == 'en' else '內容分析' }}</span>
+                        <div class="preview-content">{{ message }}</div>
+                    </div>
+                </div>
+
+                <div class="feedback-section">
+                    <small style="color:var(--text-muted); text-transform:uppercase; font-size:0.7rem; letter-spacing:1px; font-weight: 600;">
+                        {{ 'Manual Override' if lang == 'en' else '人工覆核' }}
+                    </small>
+                    <div class="btn-group">
+                        <form action="{{ url_for('teach')}}" method="POST" style="flex:1;">
+                            <input type="hidden" name="domain" value="{{ domain }}">
+                            <input type="hidden" name="message" value="{{ message }}">
+                            <input type="hidden" name="language" value="{{ lang }}">
+                            <input type="hidden" name="label" value="1">
+                            <input type="submit" class="btn btn-spam" value="{{ 'Mark SPAM' if lang == 'en' else '標記垃圾' }}">
+                        </form>
+                        <form action="{{ url_for('teach')}}" method="POST" style="flex:1;">
+                            <input type="hidden" name="domain" value="{{ domain }}">
+                            <input type="hidden" name="message" value="{{ message }}">
+                            <input type="hidden" name="language" value="{{ lang }}">
+                            <input type="hidden" name="label" value="0">
+                            <input type="submit" class="btn btn-ham" value="{{ 'Mark SAFE' if lang == 'en' else '標記安全' }}">
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="confidence-section">
+                    <div class="metrics-title">{{ 'Analysis Confidence' if lang == 'en' else '分析信心指數' }}</div>
+                    
+                    <div class="confidence-val" style="color: {{ 'var(--danger)' if prediction == 1 else 'var(--success)' }}">
+                        {{ prob_score }}%
+                    </div>
+
+                    <div class="confidence-label">
+                        {{ 'Probability of ' + ('Spam' if prediction == 1 else 'Ham') if lang == 'en' else ('垃圾郵件' if prediction == 1 else '安全郵件') + ' 機率' }}
+                    </div>
+                    
+                    <div class="single-bar-bg">
+                        <div class="single-bar-fill" 
+                             style="background: {{ 'var(--danger)' if prediction == 1 else 'var(--success)' }}" 
+                             data-width="{{ prob_score }}"></div>
+                    </div>
+                </div>
+
+                <div class="metrics-container">
+                    <div class="metrics-title">{{ 'Live Performance' if lang == 'en' else '即時系統效能' }}</div>
+                    <table class="metric-table">
+                        {% for key in ['accuracy', 'precision', 'recall', 'f1'] %}
+                        <tr>
+                            <td class="metric-name">{{ key|capitalize if key != 'f1' else 'F1 Score' }}</td>
+                            <td class="metric-val" data-target="{{ (metrics[key] * 100)|int }}">0%</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><div class="progress-bg"><div class="progress-fill" data-width="{{ metrics[key] * 100 }}"></div></div></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+
+            </div>
+        </div> 
+        <a href="/" class="back-link">{{ '← Back to Sentinel' if lang == 'en' else '← 返回分析頁' }}</a>
+    </div>
+
+    <div id="pred-val" style="display:none;">{{ prediction }}</div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // --- 1. MOUSE TILT EFFECT (3D) ---
+            const card = document.getElementById('tilt-card');
+            const sensitivity = 250; 
+
+            document.addEventListener('mousemove', (e) => {
+                if(window.innerWidth > 768) { 
+                    const xAxis = (window.innerWidth / 2 - e.pageX) / sensitivity; 
+                    const yAxis = (window.innerHeight / 2 - e.pageY) / sensitivity;
+                    card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+                }
+            });
+
+            // --- 2. PARTICLES SYSTEM ---
+            const particleContainer = document.getElementById('particle-container');
+            for(let i=0; i<900; i++) { 
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                
+                const isSpamBadge = document.querySelector('.badge.spam'); 
+                const color = isSpamBadge ? '#ef4444' : '#10b981'; 
+
+                p.style.left = Math.random() * 100 + 'vw'; 
+                p.style.animationDuration = (Math.random() * 10 + 5) + 's';
+                p.style.animationDelay = '-' + (Math.random() * 25) + 's';
+                p.style.width = p.style.height = (Math.random() * 6 + 4) + 'px'; 
+                p.style.background = color;
+                p.style.opacity = Math.random() * 0.5 + 0.3;
+                
+                particleContainer.appendChild(p);
+            }
+
+            // --- 3. METRICS ANIMATION (Live Performance) ---
+            const bars = document.querySelectorAll('.progress-fill');
+            setTimeout(() => { bars.forEach(bar => bar.style.width = bar.getAttribute('data-width') + '%'); }, 500);
+
+            const counters = document.querySelectorAll('.metric-val');
+            counters.forEach(counter => {
+                const target = +counter.getAttribute('data-target');
+                const duration = 1200; 
+                let current = 0;
+                const timer = setInterval(() => {
+                    current += target / (duration/20);
+                    if (current >= target) { counter.innerText = target + "%"; clearInterval(timer); } 
+                    else { counter.innerText = Math.ceil(current) + "%"; }
+                }, 20);
+            });
+
+            // --- 4. CONFIDENCE BAR ANIMATION ---
+            const singleBar = document.querySelector('.single-bar-fill');
+            if(singleBar) {
+                setTimeout(() => {
+                    singleBar.style.width = singleBar.getAttribute('data-width') + '%';
+                }, 600);
+            }
+        });
+
+        // --- 5. MODAL LOGIC ---
+        const modal = document.getElementById('resubmitModal');
+
+        function openModal() {
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        function confirmResubmit() {
+            document.getElementById('refreshForm').submit();
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

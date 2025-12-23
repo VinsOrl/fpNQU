@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VeriMail Sentinel</title>
+    <style>
+        /* --- THEME COLORS --- */
+        :root {
+            --primary: #60a5fa; 
+            --secondary: #c084fc;
+            --input-bg: #172554;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-dark: #1e3a8a;
+        }
+
+        @keyframes deepSpace {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", "PingFang TC", sans-serif;
+            background: linear-gradient(125deg, #020617, #0f172a, #1e1b4b);
+            background-size: 400% 400%; 
+            animation: deepSpace 15s ease infinite;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; 
+            perspective: 1000px;
+        }
+
+        /* --- CHINESE TEXT ADJUSTMENTS --- */
+        body.lang-zh h1 { font-size: 2.35rem; }
+        body.lang-zh .subtitle { font-size: 1.05rem; }
+        body.lang-zh label { font-size: 1.2rem; }
+        body.lang-zh input[type="text"], 
+        body.lang-zh textarea { font-size: 1.1rem; }    
+
+        /* --- SMOOTH CONTINUOUS BUBBLES --- */
+        @keyframes floatParticle {
+            0% { transform: translateY(10vh) translateX(0) scale(0.5); opacity: 0; }
+            10% { opacity: 0.2; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-110vh) translateX(20px) scale(1.1); opacity: 0; }
+        }
+
+        .particle-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute; bottom: -50px; border-radius: 50%;
+            animation: floatParticle 15s infinite ease-in-out; 
+            will-change: transform, opacity; 
+        }
+
+        /* --- ENTRANCE ANIMATIONS --- */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- HOLOGRAPHIC GLITCH TITLE --- */
+        @keyframes glitch-anim {
+            0% { transform: translate(0); }
+            20% { transform: translate(-1px, 1px); }
+            40% { transform: translate(-1px, -1px); }
+            60% { transform: translate(1px, 1px); }
+            80% { transform: translate(1px, -1px); }
+            100% { transform: translate(0); }
+        }
+        
+        .glitch-hover { position: relative; display: inline-block; transition: all 0.2s; }
+        
+        .glitch-hover:hover {
+            animation: glitch-anim 0.4s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: #ffffff; 
+            text-shadow: 2px 0 rgba(96, 165, 250, 0.7), -2px 0 rgba(192, 132, 252, 0.7);
+            cursor: default;
+        }
+
+        .container {
+            background: linear-gradient(145deg, rgba(10, 14, 39, 0.9) 0%, rgba(10, 17, 53, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 900px; 
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 10;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out; 
+        }
+
+        .anim-1 { opacity: 0; animation: fadeInUp 0.6s 0.2s forwards; transform: translateZ(20px); }
+        .anim-2 { opacity: 0; animation: fadeInUp 0.6s 0.4s forwards; transform: translateZ(30px); }
+        .anim-3 { opacity: 0; animation: fadeInUp 0.6s 0.6s forwards; transform: translateZ(40px); }
+
+        h1 {
+            margin-top: 0; margin-bottom: 10px; font-size: 2.2rem; font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            transition: font-size 0.3s ease;
+        }
+        .glitch-hover:hover { -webkit-text-fill-color: initial; -webkit-background-clip: initial; background: none; }
+
+        .subtitle { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 25px; font-weight: 500; transition: font-size 0.3s ease; }
+
+        /* --- SLIDING TOGGLE --- */
+        .toggle-container {
+            background: rgba(0, 0, 0, 0.3); border-radius: 30px; padding: 4px;
+            display: inline-flex; margin-bottom: 30px; border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative; overflow: hidden;
+        }
+        #toggle-slider {
+            position: absolute; top: 4px; left: 4px; width: calc(50% - 4px); height: calc(100% - 8px);
+            background: rgba(255, 255, 255, 0.15); border-radius: 25px;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); z-index: 1; 
+        }
+        .toggle-btn {
+            padding: 10px 24px; border: none; background: transparent; cursor: pointer;
+            color: var(--text-muted); font-weight: 600; font-size: 0.9rem;
+            position: relative; z-index: 2; transition: color 0.3s; width: 110px;
+        }
+        .toggle-btn.active { color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+
+        /* --- INPUTS --- */
+        label {
+            display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted);
+            margin-bottom: 8px; text-align: left; text-transform: uppercase; letter-spacing: 0.5px;
+            transition: font-size 0.3s ease;
+        }
+        input[type="text"], textarea {
+            width: 100%; padding: 14px; border: 2px solid var(--border-dark); border-radius: 12px;
+            box-sizing: border-box; font-family: inherit; margin-bottom: 20px;
+            font-size: 0.95rem; background: var(--input-bg); color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus, textarea:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.25);
+            background: rgba(23, 37, 84, 0.95);
+            transform: scale(1.02);
+        }
+        textarea { height: 120px; resize: vertical; }
+
+        /* --- SHIMMER BUTTON --- */
+        input[type="submit"] {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white; width: 100%; padding: 14px; border: none; border-radius: 12px;
+            font-weight: 700; font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+            position: relative; overflow: hidden;
+        }
+        input[type="submit"]::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
+        }
+        input[type="submit"]:hover::after { left: 100%; transition: 0.7s; }
+        input[type="submit"]:hover { opacity: 1; transform: translateY(-2px); box-shadow: 0 0 25px rgba(96, 165, 250, 0.6); }
+        input[type="submit"]:active { transform: scale(0.96); opacity: 0.8; }
+
+        .success-msg {
+            background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 12px;
+            border-radius: 10px; margin-bottom: 20px; text-align: left; font-size: 0.9rem;
+            border: 1px solid rgba(16, 185, 129, 0.3); animation: fadeInUp 0.5s forwards;
+        }
+
+        /* --- LOADING OVERLAY --- */
+        #scan-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #020617; z-index: 100;
+            display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .cyber-grid {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            perspective: 500px;
+            transform: scale(1.1);
+        }
+        .scan-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+            background: #60a5fa;
+            box-shadow: 0 0 15px #60a5fa, 0 0 30px #60a5fa;
+            animation: scanMove 2s linear infinite;
+        }
+        @keyframes scanMove {
+            0% { top: -10%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 110%; opacity: 0; }
+        }
+        .scan-text {
+            color: #60a5fa; font-family: 'Courier New', monospace; font-size: 1.2rem;
+            letter-spacing: 2px; text-transform: uppercase; z-index: 101;
+            background: rgba(0,0,0,0.7); padding: 10px 20px; border: 1px solid #60a5fa;
+            animation: textBlink 0.5s infinite alternate;
+        }
+        @keyframes textBlink { from { opacity: 0.5; } to { opacity: 1; } }
+
+        /* --- NEW: CUSTOM REFRESH BUTTON & MODAL --- */
+        .refresh-btn {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transform: rotate(180deg);
+            box-shadow: 0 0 15px rgba(96, 165, 250, 0.3);
+            border-color: var(--primary);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .custom-modal {
+            background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .custom-modal { transform: scale(1); }
+
+        .modal-icon { font-size: 2rem; margin-bottom: 15px; color: var(--primary); }
+        .modal-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; color: #fff; }
+        .modal-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; line-height: 1.5; }
+
+        .modal-actions { display: flex; gap: 15px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        
+        .btn-cancel { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
+        .btn-cancel:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        
+        .btn-confirm { background: var(--primary); color: #0f172a; }
+        .btn-confirm:hover { background: #93c5fd; box-shadow: 0 0 15px rgba(96, 165, 250, 0.4); }
+    </style>
+    
+    <script>
+        const content = {
+            'en': { 
+                'title': 'VeriMail Sentinel', 
+                'subtitle': 'Email Spam Detection System', 
+                'lbl_domain': '1. Identity Source', 
+                'ph_domain': 'e.g. Security Team <security@corp.com>', 
+                'lbl_msg': '2. Communication Content', 
+                'ph_msg': 'Paste the suspect email body here...', 
+                'btn': 'Run Security Scan', 
+                'scan': 'INITIATING SECURITY PROTOCOLS...',
+                // Modal Text
+                'modal_title': 'Refresh Sentinel?',
+                'modal_desc': 'This will clear all current inputs and refresh the interface.',
+                'modal_cancel': 'Cancel',
+                'modal_confirm': 'Reset'
+            },
+            'zh': { 
+                'title': 'VeriMail 哨兵智慧', 
+                'subtitle': '電子郵件垃圾郵件偵測', 
+                'lbl_domain': '1. 發信來源識別', 
+                'ph_domain': '例如： Security Team <security@corp.com>', 
+                'lbl_msg': '2. 郵件通訊內容', 
+                'ph_msg': '請在此貼上可疑的郵件內文...', 
+                'btn': '執行安全掃描', 
+                'scan': '正在啟動安全協議...',
+                // Modal Text
+                'modal_title': '重置 Sentinel？',
+                'modal_desc': '這將清除所有當前輸入並刷新介面。',
+                'modal_cancel': '取消',
+                'modal_confirm': '重置'
+            }
+        };
+
+        function setLang(lang) {
+            document.getElementById('langInput').value = lang;
+            document.getElementById('btn-en').classList.remove('active');
+            document.getElementById('btn-zh').classList.remove('active');
+            document.getElementById('btn-' + lang).classList.add('active');
+            const slider = document.getElementById('toggle-slider');
+            slider.style.transform = lang === 'en' ? 'translateX(0)' : 'translateX(100%)';
+            
+            // Main UI
+            document.getElementById('main-title').innerText = content[lang]['title'];
+            document.getElementById('sub-title').innerText = content[lang]['subtitle'];
+            document.getElementById('lbl-domain').innerText = content[lang]['lbl_domain'];
+            document.getElementById('inp-domain').placeholder = content[lang]['ph_domain'];
+            document.getElementById('lbl-msg').innerText = content[lang]['lbl_msg'];
+            document.getElementById('inp-msg').placeholder = content[lang]['ph_msg'];
+            document.getElementById('ui-submit').value = content[lang]['btn'];
+
+            // Modal UI
+            document.getElementById('mdl-title').innerText = content[lang]['modal_title'];
+            document.getElementById('mdl-desc').innerText = content[lang]['modal_desc'];
+            document.getElementById('mdl-cancel').innerText = content[lang]['modal_cancel'];
+            document.getElementById('mdl-confirm').innerText = content[lang]['modal_confirm'];
+
+            // --- SUBTLE FONT BOOST FOR CHINESE TEXT ONLY ---
+            if (lang === 'zh') {
+                document.body.classList.add('lang-zh');
+            } else {
+                document.body.classList.remove('lang-zh');
+            }
+        }
+
+        function triggerScan() {
+            const overlay = document.getElementById('scan-overlay');
+            const scanText = document.getElementById('scan-status');
+            const lang = document.getElementById('langInput').value;
+            scanText.innerText = content[lang]['scan'];
+            overlay.style.display = 'flex';
+            return true; 
+        }
+
+        // --- MODAL FUNCTIONS ---
+        function openModal() {
+            document.getElementById('resetModal').classList.add('active');
+        }
+        function closeModal() {
+            document.getElementById('resetModal').classList.remove('active');
+        }
+        function confirmReset() {
+            window.location.reload(); // Reloads the page to clear inputs/state
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const successBox = document.querySelector('.success-msg');
+            const inputs = document.querySelectorAll('input[type="text"], textarea');
+            if (successBox) {
+                inputs.forEach(input => {
+                    input.addEventListener('input', () => {
+                        successBox.style.opacity = '0';
+                        setTimeout(() => { successBox.style.display = 'none'; }, 300);
+                    });
+                });
+            }
+
+            // Close Modal on Outside Click
+            const modal = document.getElementById('resetModal');
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+
+            // --- SMOOTH CONTINUOUS BUBBLES ---
+            const particleContainer = document.getElementById('particle-container');
+
+            for(let i=0; i<800; i++) { 
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                
+                const isRed = Math.random() > 0.5;
+                const color = isRed ? '#ef4444' : '#10b981'; 
+                
+                p.style.left = Math.random() * 100 + 'vw'; 
+                p.style.animationDuration = (Math.random() * 10 + 5) + 's';
+                p.style.animationDelay = '-' + (Math.random() * 25) + 's';
+                p.style.width = p.style.height = (Math.random() * 6 + 4) + 'px'; 
+                p.style.background = color;
+                p.style.opacity = Math.random() * 0.5 + 0.3;
+                
+                particleContainer.appendChild(p);
+            }
+
+            // --- 3D TILT EFFECT ---
+            const card = document.getElementById('main-card');
+            
+            document.addEventListener('mousemove', (e) => {
+                if(window.innerWidth > 768) {
+                    const xAxis = (window.innerWidth / 2 - e.pageX) / 200; 
+                    const yAxis = (window.innerHeight / 2 - e.pageY) / 200;
+                    card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+                }
+            });
+            
+        });
+    </script>
+</head>
+<body>
+    <div class="particle-bg" id="particle-container"></div>
+
+    <div id="scan-overlay">
+        <div class="cyber-grid"></div>
+        <div class="scan-line"></div>
+        <div id="scan-status" class="scan-text">SCANNING...</div>
+    </div>
+
+    <div class="refresh-btn" onclick="openModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+    </div>
+
+    <div class="modal-overlay" id="resetModal">
+        <div class="custom-modal">
+            <div class="modal-icon">↺</div>
+            <div class="modal-title" id="mdl-title">Refresh Sentinel?</div>
+            <div class="modal-desc" id="mdl-desc">This will clear all current inputs and refresh the interface.</div>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" id="mdl-cancel" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn btn-confirm" id="mdl-confirm" onclick="confirmReset()">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="main-card">
+        <div class="anim-1">
+            <h1 id="main-title" class="glitch-hover">VeriMail Sentinel</h1>
+            <div id="sub-title" class="subtitle">Email Spam Detection System</div>
+        </div>
+
+        <div class="toggle-container anim-2">
+            <div id="toggle-slider"></div>
+            <button type="button" id="btn-en" class="toggle-btn active" onclick="setLang('en')">English</button>
+            <button type="button" id="btn-zh" class="toggle-btn" onclick="setLang('zh')">繁體中文</button>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="success-msg">✓ {{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+
+        <form id="form-box" class="anim-3" action="{{ url_for('predict')}}" method="POST" onsubmit="return triggerScan()">
+            <input type="hidden" id="langInput" name="language" value="en">
+            
+            <label id="lbl-domain">1. Identity Source</label>
+            <input type="text" id="inp-domain" name="domain" placeholder="e.g. Security Team <security@corp.com>" required>
+
+            <label id="lbl-msg">2. Communication Content</label>
+            <textarea id="inp-msg" name="message" placeholder="Paste the suspect email body here..." required></textarea>
+            
+            <input id="ui-submit" type="submit" value="Run Security Scan">
+        </form>
+    </div>
+</body>
+</html>
