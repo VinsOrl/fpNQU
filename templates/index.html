@@ -215,7 +215,7 @@
         }
         @keyframes textBlink { from { opacity: 0.5; } to { opacity: 1; } }
 
-        /* --- NEW: CUSTOM REFRESH BUTTON & MODAL --- */
+        /* --- CUSTOM REFRESH BUTTON & MODAL --- */
         .refresh-btn {
             position: absolute;
             top: 25px;
@@ -366,7 +366,7 @@
             document.getElementById('resetModal').classList.remove('active');
         }
         function confirmReset() {
-            window.location.reload(); // Reloads the page to clear inputs/state
+            window.location.reload();
         }
 
         document.addEventListener('DOMContentLoaded', () => {

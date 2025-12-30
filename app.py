@@ -61,7 +61,6 @@ def predict():
         final_input = hstack([vect_d, vect_m, logic_df])
         
         # --- PREDICTION & PROBABILITY CALCULATION ---
-        # Get binary prediction
         prediction_array = clf.predict(final_input)
         prediction = prediction_array[0]
         
